@@ -1,6 +1,6 @@
 # dujo
 
-A digital bullet journal built with Next.js.
+a digital bullet journal! 
 
 ## Getting started
 
