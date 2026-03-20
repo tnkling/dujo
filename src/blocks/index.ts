@@ -29,4 +29,5 @@ export type {
   ChecklistBlock,
   HabitTrackerBlock,
   ChecklistItem,
+  HabitItem,
 } from "./types";

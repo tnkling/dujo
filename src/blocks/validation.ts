@@ -5,6 +5,7 @@ import type {
   ChecklistBlock,
   HabitTrackerBlock,
   ChecklistItem,
+  HabitItem,
 } from "./types";
 
 // Update when adding new block types to types.ts
@@ -48,6 +49,16 @@ function isValidChecklistBlock(value: unknown): value is ChecklistBlock {
   return o.items.every(isValidChecklistItem);
 }
 
+function isValidHabitItem(value: unknown): value is HabitItem {
+  if (typeof value !== "object" || value === null) return false;
+  const o = value as Record<string, unknown>;
+  return (
+    typeof o.id === "string" &&
+    typeof o.name === "string" &&
+    typeof o.done === "boolean"
+  );
+}
+
 function isValidHabitTrackerBlock(
   value: unknown
 ): value is HabitTrackerBlock {
@@ -61,7 +72,7 @@ function isValidHabitTrackerBlock(
     return false;
   }
   if (!Array.isArray(o.habits)) return false;
-  return o.habits.every((h) => typeof h === "string");
+  return o.habits.every(isValidHabitItem);
 }
 
 function repairTextBlock(value: Record<string, unknown>): TextBlock | null {
@@ -88,13 +99,34 @@ function repairChecklistBlock(value: Record<string, unknown>): ChecklistBlock | 
   return { id, type: "checklist", title, items };
 }
 
+function repairHabitItem(value: Record<string, unknown> | string): HabitItem {
+  if (typeof value === "string") {
+    return { id: crypto.randomUUID(), name: value, done: false };
+  }
+  const id = typeof value.id === "string" ? value.id : crypto.randomUUID();
+  const name = typeof value.name === "string" ? value.name : "";
+  const done = value.done === true;
+  return { id, name, done };
+}
+
 function repairHabitTrackerBlock(
   value: Record<string, unknown>
 ): HabitTrackerBlock | null {
   const id = typeof value.id === "string" ? value.id : crypto.randomUUID();
   const title = typeof value.title === "string" ? value.title : "This Week";
   const rawHabits = Array.isArray(value.habits) ? value.habits : [];
-  const habits = rawHabits.filter((h): h is string => typeof h === "string");
+  const habits = rawHabits
+    .filter((h) => typeof h === "string" || (typeof h === "object" && h !== null))
+    .map((h) => repairHabitItem(typeof h === "string" ? h : (h as Record<string, unknown>)));
+  if (habits.length === 0) {
+    habits.push(
+      ...["Exercise", "Read", "Meditate", "Journal"].map((name) => ({
+        id: crypto.randomUUID(),
+        name,
+        done: false,
+      }))
+    );
+  }
   return { id, type: "habit-tracker", title, habits };
 }
 

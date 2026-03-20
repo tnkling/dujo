@@ -19,8 +19,13 @@ export const mockBlocks: Block[] = [
   {
     id: "3",
     type: "habit-tracker",
-    title: "This Week",
-    habits: ["Exercise", "Read", "Meditate", "Journal"],
+    title: "Today",
+    habits: [
+      { id: "h1", name: "Exercise", done: false },
+      { id: "h2", name: "Read", done: false },
+      { id: "h3", name: "Meditate", done: false },
+      { id: "h4", name: "Journal", done: false },
+    ],
   },
   {
     id: "4",

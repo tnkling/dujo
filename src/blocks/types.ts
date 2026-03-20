@@ -8,6 +8,13 @@ export interface ChecklistItem {
   checked: boolean;
 }
 
+// Habit item (one habit + done state for current day)
+export interface HabitItem {
+  id: string;
+  name: string;
+  done: boolean;
+}
+
 // Base block with shared fields
 interface BaseBlock {
   id: string;
@@ -29,7 +36,7 @@ export interface ChecklistBlock extends BaseBlock {
 export interface HabitTrackerBlock extends BaseBlock {
   type: "habit-tracker";
   title: string;
-  habits: string[];
+  habits: HabitItem[];
 }
 
 // Union type — add new variants here when extending
