@@ -1,5 +1,5 @@
 import { RedirectToToday } from "@/components/RedirectToToday";
 
-export default function Home() {
+export default function PageIndex() {
   return <RedirectToToday />;
 }
