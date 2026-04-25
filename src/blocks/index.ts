@@ -7,6 +7,7 @@
  * 3. Import it here to trigger registration
  */
 
+import "./rapid-log";
 import "./text";
 import "./checklist";
 import "./habit-tracker";
@@ -25,6 +26,10 @@ export type {
   Block,
   BlockType,
   BlockComponentProps,
+  RapidLogBlock,
+  RapidEntry,
+  BulletType,
+  TaskStatus,
   TextBlock,
   ChecklistBlock,
   HabitTrackerBlock,

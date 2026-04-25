@@ -47,8 +47,8 @@ function TextBlockComponent({
       value={localContent}
       onChange={handleChange}
       onBlur={flush}
-      className="w-full min-h-[120px] p-4 rounded-lg border border-zinc-200 bg-white text-zinc-800 placeholder-zinc-400 resize-y focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-transparent"
-      placeholder="Write your thoughts..."
+      className="w-full min-h-[80px] bg-transparent border-none outline-none ring-0 focus:ring-0 text-stone-700 placeholder-stone-300 resize-none text-sm leading-relaxed"
+      placeholder="Write your thoughts…"
     />
   );
 }

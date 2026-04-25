@@ -37,6 +37,26 @@ export async function savePageBlocks(
   return !error;
 }
 
+export async function fetchMultiplePageBlocks(
+  userId: string,
+  pageIds: string[]
+): Promise<Record<string, Block[]>> {
+  if (!supabase || pageIds.length === 0) return {};
+  const { data, error } = await supabase
+    .from("journal_pages")
+    .select("page_id, blocks")
+    .eq("user_id", userId)
+    .in("page_id", pageIds);
+
+  if (error || !data) return {};
+  const result: Record<string, Block[]> = {};
+  for (const row of data) {
+    const blocks = validateBlocks(row.blocks as unknown);
+    if (blocks) result[row.page_id as string] = blocks;
+  }
+  return result;
+}
+
 export async function fetchPageIds(userId: string): Promise<string[]> {
   if (!supabase) return [];
   const { data, error } = await supabase

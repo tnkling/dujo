@@ -5,6 +5,7 @@ import type { BlockType } from "@/blocks";
 import { getRegisteredBlockTypes } from "@/blocks";
 
 const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
+  "rapid-log": "Log",
   text: "Text",
   checklist: "Checklist",
   "habit-tracker": "Habit Tracker",

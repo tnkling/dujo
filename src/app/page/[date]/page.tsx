@@ -16,7 +16,7 @@ export default async function DatePage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen" style={{ backgroundColor: "var(--cream)" }}>
       <JournalPage
         pageId={pageId}
         todayFallbackBlocks={mockBlocks}

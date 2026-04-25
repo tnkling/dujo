@@ -24,15 +24,16 @@ import { usePersistedBlocks } from "@/hooks/usePersistedBlocks";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageDiscovery } from "./PageDiscovery";
 import { AuthModal } from "@/components/auth/AuthModal";
-import { InsertBlockButton } from "./InsertBlockButton";
-import { AddBlockDropdown } from "./AddBlockDropdown";
 import {
   getTodayPageId,
   getPrevPageId,
   getNextPageId,
+  formatPageIdForDisplay,
 } from "@/lib/dates";
+import { ViewSwitcher } from "@/components/ViewSwitcher";
 
 const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
+  "rapid-log": "Log",
   text: "Text",
   checklist: "Checklist",
   "habit-tracker": "Habit Tracker",
@@ -53,7 +54,6 @@ export function JournalPage({
     pageId,
     todayFallbackBlocks
   );
-
   const showSaved = lastSavedAt !== null;
   const { user, signOut, isLoading: authLoading } = useAuth();
   const [mounted, setMounted] = useState(false);
@@ -61,9 +61,7 @@ export function JournalPage({
   const [pagesMenuOpen, setPagesMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const [addMenuFocusIndex, setAddMenuFocusIndex] = useState(0);
   const addMenuRef = useRef<HTMLDivElement>(null);
-  const addMenuTriggerRef = useRef<HTMLButtonElement>(null);
   const pagesMenuRef = useRef<HTMLDivElement>(null);
   const accountMenuRef = useRef<HTMLDivElement>(null);
 
@@ -75,15 +73,14 @@ export function JournalPage({
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (!addMenuOpen && !pagesMenuOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
+    if (!addMenuOpen && !pagesMenuOpen && !accountMenuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      const t = e.target as Node;
       if (
-        addMenuRef.current?.contains(target) ||
-        pagesMenuRef.current?.contains(target) ||
-        accountMenuRef.current?.contains(target)
-      )
-        return;
+        addMenuRef.current?.contains(t) ||
+        pagesMenuRef.current?.contains(t) ||
+        accountMenuRef.current?.contains(t)
+      ) return;
       setAddMenuOpen(false);
       setPagesMenuOpen(false);
       setAccountMenuOpen(false);
@@ -95,10 +92,10 @@ export function JournalPage({
         setAccountMenuOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClick);
     document.addEventListener("keydown", handleEscape);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousedown", handleClick);
       document.removeEventListener("keydown", handleEscape);
     };
   }, [addMenuOpen, pagesMenuOpen, accountMenuOpen]);
@@ -119,14 +116,8 @@ export function JournalPage({
   }, []);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
@@ -147,91 +138,89 @@ export function JournalPage({
     );
   }, []);
 
-  const sortableItems = useMemo(
-    () => blocks.map((b) => b.id),
-    [blocks]
-  );
+  const sortableItems = useMemo(() => blocks.map((b) => b.id), [blocks]);
 
   if (!mounted || !isHydrated) {
     return (
-      <div className="max-w-2xl mx-auto py-8 px-4">
-        <header className="mb-8">
-          <h1 className="text-2xl font-semibold text-zinc-800">{pageTitle}</h1>
-          <p className="text-zinc-500 mt-1">Loading...</p>
-        </header>
+      <div className="max-w-2xl mx-auto py-12 px-6">
+        <div className="text-stone-400 text-sm">Loading…</div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4">
-      <header className="mb-8 flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-4">
-          <nav className="flex items-center gap-2">
-            <Link
-              href={`/page/${prevId}`}
-              className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
-              aria-label="Previous day"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+    <div className="min-h-screen" style={{ backgroundColor: "var(--cream)" }}>
+      {/* Top utility bar — minimal, stays out of the way */}
+      <div className="border-b border-stone-200 bg-[var(--cream)]">
+        <div className="max-w-2xl mx-auto px-6 py-2 flex items-center justify-between gap-4">
+          {/* Pages + auth */}
+          <div className="flex items-center gap-1">
+            <div ref={pagesMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setPagesMenuOpen((p) => !p)}
+                className="px-2.5 py-1 text-xs font-medium text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
+                aria-expanded={pagesMenuOpen}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </Link>
-            <h1 className="text-xl font-semibold text-zinc-800 min-w-[180px] text-center">
-              {pageTitle}
-            </h1>
-            <Link
-              href={`/page/${nextId}`}
-              className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
-              aria-label="Next day"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+                Pages
+              </button>
+              {pagesMenuOpen && (
+                <div className="absolute left-0 mt-1 py-2 rounded-lg border border-stone-200 bg-[var(--paper)] shadow-lg z-20">
+                  <PageDiscovery
+                    currentPageId={pageId}
+                    onClose={() => setPagesMenuOpen(false)}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Add block */}
+            <div ref={addMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setAddMenuOpen((p) => !p)}
+                className="px-2.5 py-1 text-xs font-medium text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded transition-colors"
+                aria-expanded={addMenuOpen}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </Link>
-          </nav>
+                + Add
+              </button>
+              {addMenuOpen && (
+                <div className="absolute left-0 mt-1 py-1 rounded-lg border border-stone-200 bg-[var(--paper)] shadow-lg z-20 min-w-[140px]">
+                  {getRegisteredBlockTypes().map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => handleAddBlock(type)}
+                      className="w-full px-4 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-50"
+                    >
+                      {BLOCK_TYPE_LABELS[type]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right side: view switcher + auth */}
           <div className="flex items-center gap-2">
+            <ViewSwitcher view="day" currentId={pageId} />
+
             <div ref={accountMenuRef} className="relative">
               {user ? (
                 <>
                   <button
                     type="button"
-                    onClick={() => setAccountMenuOpen((prev) => !prev)}
-                    className="px-3 py-1.5 text-sm font-medium text-zinc-600 hover:text-zinc-800 hover:bg-zinc-100 rounded-lg truncate max-w-[140px]"
-                    aria-expanded={accountMenuOpen}
-                    aria-haspopup="true"
+                    onClick={() => setAccountMenuOpen((p) => !p)}
+                    className="px-2.5 py-1 text-xs text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded truncate max-w-[120px]"
                   >
                     {user.email}
                   </button>
                   {accountMenuOpen && (
-                    <div className="absolute right-0 mt-2 py-1 rounded-lg border border-zinc-200 bg-white shadow-lg z-20 min-w-[180px]">
+                    <div className="absolute right-0 mt-1 py-1 rounded-lg border border-stone-200 bg-[var(--paper)] shadow-lg z-20 min-w-[160px]">
                       <button
                         type="button"
-                        onClick={() => {
-                          void signOut();
-                          setAccountMenuOpen(false);
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+                        onClick={() => { void signOut(); setAccountMenuOpen(false); }}
+                        className="w-full px-4 py-2 text-left text-sm text-stone-700 hover:bg-stone-50"
                       >
                         Sign out
                       </button>
@@ -243,140 +232,162 @@ export function JournalPage({
                   type="button"
                   onClick={() => setAuthModalOpen(true)}
                   disabled={authLoading}
-                  className="px-3 py-1.5 text-sm font-medium text-zinc-600 hover:text-zinc-800 hover:bg-zinc-100 rounded-lg"
+                  className="px-2.5 py-1 text-xs text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded"
                 >
-                  {authLoading ? "Loading…" : "Sign in"}
+                  {authLoading ? "…" : "Sign in"}
                 </button>
-              )}
-            </div>
-            {!isToday && (
-              <Link
-                href={`/page/${todayId}`}
-                className="px-3 py-1.5 text-sm font-medium text-zinc-600 hover:text-zinc-800 hover:bg-zinc-100 rounded-lg"
-              >
-                Today
-              </Link>
-            )}
-            <div ref={pagesMenuRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setPagesMenuOpen((prev) => !prev)}
-                className="px-3 py-1.5 text-sm font-medium text-zinc-600 hover:text-zinc-800 hover:bg-zinc-100 rounded-lg flex items-center gap-1"
-                aria-expanded={pagesMenuOpen}
-                aria-haspopup="true"
-              >
-                Pages
-                <svg
-                  className={`w-4 h-4 transition-transform ${pagesMenuOpen ? "rotate-180" : ""}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {pagesMenuOpen && (
-                <div className="absolute right-0 mt-2 py-2 rounded-lg border border-zinc-200 bg-white shadow-lg z-20">
-                  <PageDiscovery
-                    currentPageId={pageId}
-                    onClose={() => setPagesMenuOpen(false)}
-                  />
-                </div>
-              )}
-            </div>
-            <div ref={addMenuRef} className="relative">
-              <button
-                ref={addMenuTriggerRef}
-                type="button"
-                onClick={() => {
-                  setAddMenuOpen((prev) => !prev);
-                  setAddMenuFocusIndex(0);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setAddMenuOpen((prev) => !prev);
-                    setAddMenuFocusIndex(0);
-                  }
-                }}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-200 bg-white text-zinc-700 text-sm font-medium hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-300"
-                aria-expanded={addMenuOpen}
-                aria-haspopup="true"
-              >
-                Add Block
-                <svg
-                  className={`w-4 h-4 transition-transform ${
-                    addMenuOpen ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-              {addMenuOpen && (
-                <AddBlockDropdown
-                  blockTypes={getRegisteredBlockTypes()}
-                  labels={BLOCK_TYPE_LABELS}
-                  focusIndex={addMenuFocusIndex}
-                  onFocusIndexChange={setAddMenuFocusIndex}
-                  onSelect={(type) => handleAddBlock(type)}
-                  onClose={() => {
-                    setAddMenuOpen(false);
-                    addMenuTriggerRef.current?.focus();
-                  }}
-                />
               )}
             </div>
           </div>
         </div>
-        <p className="text-zinc-500 text-sm flex items-center gap-2 flex-wrap">
-          Drag blocks to reorder • Edit inline •
-          {user ? "Synced across devices" : "Saved locally"}
-          {showSaved && (
-            <span className="text-emerald-600 text-xs font-medium">Saved</span>
-          )}
-        </p>
-      </header>
+      </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={sortableItems}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="space-y-4">
-            {blocks.map((block, index) => (
-              <div key={block.id} className="space-y-4">
-                <InsertBlockButton
-                  onInsert={(type) => handleAddBlock(type, index)}
-                  aria-label={`Add block above ${index + 1}`}
-                />
-                <SortableBlock
-                  block={block}
-                  onBlockChange={handleBlockChange}
-                  onDelete={handleDeleteBlock}
-                />
-              </div>
-            ))}
-            <InsertBlockButton
-              onInsert={(type) => handleAddBlock(type)}
-              aria-label="Add block at end"
-            />
+      {/* Journal page */}
+      <div className="max-w-2xl mx-auto px-6 py-10">
+        {/* Page header — centered like writing the date at the top of a notebook page */}
+        <header className="mb-8 text-center">
+          <div className="flex items-center justify-center gap-3 mb-1">
+            <Link
+              href={`/page/${prevId}`}
+              className="text-stone-400 hover:text-stone-700 transition-colors"
+              aria-label="Previous day"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
+            <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
+              {pageTitle}
+            </h1>
+            <Link
+              href={`/page/${nextId}`}
+              className="text-stone-400 hover:text-stone-700 transition-colors"
+              aria-label="Next day"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
-        </SortableContext>
-      </DndContext>
-      {authModalOpen && (
-        <AuthModal onClose={() => setAuthModalOpen(false)} />
+
+          {/* Thin rule under the date, like underlining the header in a notebook */}
+          <div className="w-24 h-px bg-stone-300 mx-auto mt-3" />
+
+          <div className="mt-2 flex items-center justify-center gap-3">
+            {!isToday && (
+              <Link
+                href={`/page/${todayId}`}
+                className="text-xs text-stone-400 hover:text-stone-700 transition-colors"
+              >
+                → Today
+              </Link>
+            )}
+            {showSaved && (
+              <span className="text-xs text-stone-400">Saved</span>
+            )}
+            <span className="text-xs text-stone-400">
+              {user ? "synced" : "local"}
+            </span>
+          </div>
+        </header>
+
+        {/* Writing area — dot grid like a real bullet journal page */}
+        <div className="dot-grid rounded-lg p-6 min-h-[60vh]" style={{ backgroundColor: "var(--paper)" }}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
+              <div className="space-y-2">
+                {blocks.map((block, index) => (
+                  <div key={block.id} className="space-y-2">
+                    <InlineInsert onInsert={(type) => handleAddBlock(type, index)} />
+                    <SortableBlock
+                      block={block}
+                      onBlockChange={handleBlockChange}
+                      onDelete={handleDeleteBlock}
+                    />
+                  </div>
+                ))}
+                <InlineInsert onInsert={(type) => handleAddBlock(type)} />
+              </div>
+            </SortableContext>
+          </DndContext>
+
+          {blocks.length === 0 && (
+            <p className="text-stone-300 text-sm text-center mt-8 select-none">
+              Click "+ Add" above to start your log
+            </p>
+          )}
+        </div>
+
+        {/* BuJo key — small reference at the bottom */}
+        <div className="mt-6 flex flex-wrap gap-x-5 gap-y-1 justify-center">
+          {[
+            ["·", "Task"],
+            ["×", "Done"],
+            ["›", "Migrated"],
+            ["○", "Event"],
+            ["—", "Note"],
+            ["★", "Priority"],
+          ].map(([glyph, label]) => (
+            <span key={label} className="text-xs text-stone-400 font-mono">
+              {glyph} <span className="font-sans">{label}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {authModalOpen && <AuthModal onClose={() => setAuthModalOpen(false)} />}
+    </div>
+  );
+}
+
+/** Hairline insert zone — barely visible until hovered */
+function InlineInsert({ onInsert }: { onInsert: (type: BlockType) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative flex items-center gap-2 group/ins -my-1 py-1">
+      <div className="flex-1 h-px bg-stone-200 opacity-0 group-hover/ins:opacity-100 transition-opacity" />
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className="text-stone-300 hover:text-stone-500 text-xs opacity-0 group-hover/ins:opacity-100 transition-opacity focus:opacity-100 leading-none"
+        aria-label="Insert block"
+      >
+        +
+      </button>
+      <div className="flex-1 h-px bg-stone-200 opacity-0 group-hover/ins:opacity-100 transition-opacity" />
+      {open && (
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 py-1 rounded-lg border border-stone-200 bg-[var(--paper)] shadow-lg z-10 min-w-[140px]">
+          {getRegisteredBlockTypes().map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => { onInsert(type); setOpen(false); }}
+              className="w-full px-4 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-50"
+            >
+              {BLOCK_TYPE_LABELS[type]}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );

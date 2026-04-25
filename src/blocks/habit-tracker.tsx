@@ -48,63 +48,47 @@ function HabitTrackerBlockComponent({
   );
 
   return (
-    <div className="p-4 rounded-lg border border-zinc-200 bg-white">
-      <h3 className="font-medium text-zinc-800 mb-3">{block.title}</h3>
-      <ul className="space-y-2">
+    <div className="py-1">
+      {block.title && (
+        <p className="text-xs font-medium text-stone-400 uppercase tracking-widest mb-2 ml-7">{block.title}</p>
+      )}
+      <ul className="space-y-0.5">
         {block.habits.map((habit) => (
-          <li
-            key={habit.id}
-            className="flex items-center gap-3 group"
-          >
-            <input
-              type="checkbox"
-              checked={habit.done}
-              onChange={() => handleToggle(habit.id)}
-              className="w-4 h-4 rounded border-zinc-300 text-zinc-600 focus:ring-zinc-300"
-            />
-            <span
-              className={`flex-1 ${
-                habit.done ? "line-through text-zinc-500" : "text-zinc-700"
-              }`}
+          <li key={habit.id} className="flex items-baseline gap-2 group/habit">
+            <button
+              type="button"
+              onClick={() => handleToggle(habit.id)}
+              className="flex-none w-5 text-center font-mono text-base leading-none text-stone-400 hover:text-stone-600 transition-colors"
             >
+              {habit.done ? "×" : "○"}
+            </button>
+            <span className={`flex-1 text-sm leading-relaxed ${habit.done ? "line-through text-stone-400" : "text-stone-700"}`}>
               {habit.name}
             </span>
             <button
               type="button"
               onClick={() => handleRemoveHabit(habit.id)}
-              className="p-1 rounded text-zinc-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="opacity-0 group-hover/habit:opacity-100 text-stone-300 hover:text-red-400 text-xs transition-opacity"
               aria-label={`Remove ${habit.name}`}
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              ×
             </button>
           </li>
         ))}
       </ul>
-      <form onSubmit={handleAddHabit} className="mt-3 flex gap-2">
+      <form onSubmit={handleAddHabit} className="mt-2 ml-7 flex gap-2">
         <input
           type="text"
           value={newHabit}
           onChange={(e) => setNewHabit(e.target.value)}
           placeholder="Add habit…"
-          className="flex-1 px-3 py-2 text-sm border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:border-transparent"
+          className="flex-1 bg-transparent border-none outline-none ring-0 focus:ring-0 text-sm text-stone-700 placeholder-stone-300"
         />
         <button
           type="submit"
-          className="px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-800 hover:bg-zinc-100 rounded-lg"
+          className="text-xs text-stone-400 hover:text-stone-700 transition-colors"
         >
-          Add
+          add
         </button>
       </form>
     </div>

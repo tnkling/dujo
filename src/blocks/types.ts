@@ -1,5 +1,5 @@
 // Block type discriminator — add new types here when extending
-export type BlockType = "text" | "checklist" | "habit-tracker";
+export type BlockType = "rapid-log" | "text" | "checklist" | "habit-tracker";
 
 // Checklist item
 export interface ChecklistItem {
@@ -15,10 +15,26 @@ export interface HabitItem {
   done: boolean;
 }
 
+// Rapid log — the core bullet journal entry type
+export type BulletType = "task" | "event" | "note" | "priority";
+export type TaskStatus = "pending" | "complete" | "migrated" | "cancelled";
+
+export interface RapidEntry {
+  id: string;
+  bullet: BulletType;
+  status: TaskStatus;
+  text: string;
+}
+
 // Base block with shared fields
 interface BaseBlock {
   id: string;
   type: BlockType;
+}
+
+export interface RapidLogBlock extends BaseBlock {
+  type: "rapid-log";
+  entries: RapidEntry[];
 }
 
 // Block variants — add new interfaces here when extending
@@ -40,7 +56,7 @@ export interface HabitTrackerBlock extends BaseBlock {
 }
 
 // Union type — add new variants here when extending
-export type Block = TextBlock | ChecklistBlock | HabitTrackerBlock;
+export type Block = RapidLogBlock | TextBlock | ChecklistBlock | HabitTrackerBlock;
 
 // Standard props for all block components
 export interface BlockComponentProps {

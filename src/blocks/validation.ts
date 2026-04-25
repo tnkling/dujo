@@ -1,6 +1,10 @@
 import type {
   Block,
   BlockType,
+  RapidLogBlock,
+  RapidEntry,
+  BulletType,
+  TaskStatus,
   TextBlock,
   ChecklistBlock,
   HabitTrackerBlock,
@@ -9,7 +13,9 @@ import type {
 } from "./types";
 
 // Update when adding new block types to types.ts
-const BLOCK_TYPES: BlockType[] = ["text", "checklist", "habit-tracker"];
+const BLOCK_TYPES: BlockType[] = ["rapid-log", "text", "checklist", "habit-tracker"];
+const BULLET_TYPES: BulletType[] = ["task", "event", "note", "priority"];
+const TASK_STATUSES: TaskStatus[] = ["pending", "complete", "migrated", "cancelled"];
 
 function isValidBlockType(value: unknown): value is BlockType {
   return typeof value === "string" && BLOCK_TYPES.includes(value as BlockType);
@@ -73,6 +79,43 @@ function isValidHabitTrackerBlock(
   }
   if (!Array.isArray(o.habits)) return false;
   return o.habits.every(isValidHabitItem);
+}
+
+function isValidRapidEntry(value: unknown): value is RapidEntry {
+  if (typeof value !== "object" || value === null) return false;
+  const o = value as Record<string, unknown>;
+  return (
+    typeof o.id === "string" &&
+    typeof o.text === "string" &&
+    BULLET_TYPES.includes(o.bullet as BulletType) &&
+    TASK_STATUSES.includes(o.status as TaskStatus)
+  );
+}
+
+function repairRapidEntry(value: unknown): RapidEntry {
+  const o = (typeof value === "object" && value !== null ? value : {}) as Record<string, unknown>;
+  return {
+    id: typeof o.id === "string" ? o.id : crypto.randomUUID(),
+    bullet: BULLET_TYPES.includes(o.bullet as BulletType) ? (o.bullet as BulletType) : "task",
+    status: TASK_STATUSES.includes(o.status as TaskStatus) ? (o.status as TaskStatus) : "pending",
+    text: typeof o.text === "string" ? o.text : "",
+  };
+}
+
+function isValidRapidLogBlock(value: unknown): value is RapidLogBlock {
+  if (typeof value !== "object" || value === null) return false;
+  const o = value as Record<string, unknown>;
+  if (typeof o.id !== "string" || o.type !== "rapid-log") return false;
+  if (!Array.isArray(o.entries)) return false;
+  return o.entries.every(isValidRapidEntry);
+}
+
+function repairRapidLogBlock(value: Record<string, unknown>): RapidLogBlock {
+  const id = typeof value.id === "string" ? value.id : crypto.randomUUID();
+  const rawEntries = Array.isArray(value.entries) ? value.entries : [];
+  const entries = rawEntries.map(repairRapidEntry);
+  if (entries.length === 0) entries.push(repairRapidEntry({}));
+  return { id, type: "rapid-log", entries };
 }
 
 function repairTextBlock(value: Record<string, unknown>): TextBlock | null {
@@ -142,6 +185,9 @@ export function validateBlock(value: unknown): Block | null {
   if (typeof id !== "string" || !isValidBlockType(type)) return null;
 
   switch (type) {
+    case "rapid-log":
+      if (isValidRapidLogBlock(value)) return value;
+      return repairRapidLogBlock(o);
     case "text":
       if (isValidTextBlock(value)) return value;
       return repairTextBlock(o);

@@ -12,22 +12,25 @@ function ChecklistBlockComponent({
   onBlockChange: (updated: ChecklistBlockType) => void;
 }) {
   return (
-    <div className="p-4 rounded-lg border border-zinc-200 bg-white">
-      <h3 className="font-medium text-zinc-800 mb-3">{block.title}</h3>
-      <ul className="space-y-2">
+    <div className="py-1">
+      {block.title && (
+        <p className="text-xs font-medium text-stone-400 uppercase tracking-widest mb-2 ml-7">{block.title}</p>
+      )}
+      <ul className="space-y-0.5">
         {block.items.map((item) => (
-          <li key={item.id} className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={item.checked}
-              onChange={() => {
+          <li key={item.id} className="flex items-baseline gap-2">
+            <button
+              type="button"
+              onClick={() => {
                 const items = block.items.map((i) =>
                   i.id === item.id ? { ...i, checked: !i.checked } : i
                 );
                 onBlockChange({ ...block, items });
               }}
-              className="w-4 h-4 rounded border-zinc-300 text-zinc-600 focus:ring-zinc-300"
-            />
+              className="flex-none w-5 text-center font-mono text-base leading-none text-stone-400 hover:text-stone-600 transition-colors"
+            >
+              {item.checked ? "×" : "·"}
+            </button>
             <input
               type="text"
               value={item.text}
@@ -37,8 +40,8 @@ function ChecklistBlockComponent({
                 );
                 onBlockChange({ ...block, items });
               }}
-              className={`flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-700 ${
-                item.checked ? "line-through text-zinc-500" : ""
+              className={`flex-1 bg-transparent border-none outline-none ring-0 focus:ring-0 text-sm leading-relaxed min-w-0 ${
+                item.checked ? "line-through text-stone-400" : "text-stone-800"
               }`}
             />
           </li>
